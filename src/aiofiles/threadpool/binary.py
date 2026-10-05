@@ -3,7 +3,6 @@ from .utils import delegate_to_executor, proxy_method_directly, proxy_property_d
 
 
 @delegate_to_executor(
-    "close",
     "flush",
     "isatty",
     "read",
@@ -31,7 +30,6 @@ class AsyncBufferedReader(AsyncBufferedIOBase):
 
 
 @delegate_to_executor(
-    "close",
     "flush",
     "isatty",
     "read",
@@ -54,7 +52,6 @@ class AsyncFileIO(AsyncBase):
 
 
 @delegate_to_executor(
-    "close",
     "flush",
     "isatty",
     "read",
@@ -82,7 +79,6 @@ class AsyncIndirectBufferedReader(AsyncIndirectBufferedIOBase):
 
 
 @delegate_to_executor(
-    "close",
     "flush",
     "isatty",
     "read",

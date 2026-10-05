@@ -1,6 +1,7 @@
 """Utilities for asyncio-friendly file handling."""
 
 from . import tempfile
+from .base import shutdown_executor
 from .threadpool import (
     open,
     stderr,
@@ -13,6 +14,7 @@ from .threadpool import (
 
 __all__ = [
     "open",
+    "shutdown_executor",
     "tempfile",
     "stdin",
     "stdout",

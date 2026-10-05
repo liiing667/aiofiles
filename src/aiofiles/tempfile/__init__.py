@@ -8,7 +8,7 @@ from tempfile import TemporaryDirectory as syncTemporaryDirectory
 from tempfile import TemporaryFile as syncTemporaryFile
 from tempfile import _TemporaryFileWrapper as syncTemporaryFileWrapper
 
-from ..base import AiofilesContextManager
+from ..base import AiofilesContextManager, get_default_executor
 from ..threadpool.binary import AsyncBufferedIOBase, AsyncBufferedReader, AsyncFileIO
 from ..threadpool.text import AsyncTextIOWrapper
 from .temptypes import AsyncSpooledTemporaryFile, AsyncTemporaryDirectory
@@ -234,7 +234,9 @@ if sys.version_info >= (3, 12):
                 dir=dir,
             )
 
-        f = await loop.run_in_executor(executor, cb)
+        f = await loop.run_in_executor(
+            executor if executor is not None else get_default_executor(), cb
+        )
 
         # Wrap based on type of underlying IO object
         if type(f) is syncTemporaryFileWrapper:
@@ -289,7 +291,9 @@ else:
                 dir=dir,
             )
 
-        f = await loop.run_in_executor(executor, cb)
+        f = await loop.run_in_executor(
+            executor if executor is not None else get_default_executor(), cb
+        )
 
         # Wrap based on type of underlying IO object
         if type(f) is syncTemporaryFileWrapper:
@@ -330,7 +334,9 @@ async def _spooled_temporary_file(
         dir=dir,
     )
 
-    f = await loop.run_in_executor(executor, cb)
+    f = await loop.run_in_executor(
+        executor if executor is not None else get_default_executor(), cb
+    )
 
     # Single interface provided by SpooledTemporaryFile for all modes
     return AsyncSpooledTemporaryFile(f, loop=loop, executor=executor)
@@ -360,7 +366,9 @@ if sys.version_info >= (3, 12):
             ignore_cleanup_errors,
             delete=delete,
         )
-        f = await loop.run_in_executor(executor, cb)
+        f = await loop.run_in_executor(
+            executor if executor is not None else get_default_executor(), cb
+        )
 
         return AsyncTemporaryDirectory(f, loop=loop, executor=executor)
 
@@ -374,7 +382,9 @@ else:
             loop = asyncio.get_running_loop()
 
         cb = partial(syncTemporaryDirectory, suffix, prefix, dir)
-        f = await loop.run_in_executor(executor, cb)
+        f = await loop.run_in_executor(
+            executor if executor is not None else get_default_executor(), cb
+        )
 
         return AsyncTemporaryDirectory(f, loop=loop, executor=executor)
 

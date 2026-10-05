@@ -3,7 +3,6 @@ from .utils import delegate_to_executor, proxy_method_directly, proxy_property_d
 
 
 @delegate_to_executor(
-    "close",
     "flush",
     "isatty",
     "read",
@@ -34,7 +33,6 @@ class AsyncTextIOWrapper(AsyncBase):
 
 
 @delegate_to_executor(
-    "close",
     "flush",
     "isatty",
     "read",

@@ -12,7 +12,7 @@ from io import (
     TextIOBase,
 )
 
-from ..base import AiofilesContextManager
+from ..base import AiofilesContextManager, get_default_executor, shutdown_executor
 from .binary import (
     AsyncBufferedIOBase,
     AsyncBufferedReader,
@@ -25,6 +25,7 @@ sync_open = open
 
 __all__ = (
     "open",
+    "shutdown_executor",
     "stdin",
     "stdout",
     "stderr",
@@ -90,7 +91,27 @@ async def _open(
         closefd=closefd,
         opener=opener,
     )
-    f = await loop.run_in_executor(executor, cb)
+    run_executor = executor if executor is not None else get_default_executor()
+
+    # Submit directly so that, if the awaiting coroutine is cancelled while
+    # the sync open is still running, the late-arriving file object can be
+    # closed instead of leaking its file descriptor.
+    future = run_executor.submit(cb)
+    try:
+        f = await asyncio.wrap_future(future)
+    except asyncio.CancelledError:
+        def _close_late_file(done_future):
+            try:
+                late_file = done_future.result()
+            except Exception:
+                return
+            try:
+                late_file.close()
+            except Exception:
+                pass
+
+        future.add_done_callback(_close_late_file)
+        raise
 
     return wrap(f, loop=loop, executor=executor)
 

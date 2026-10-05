@@ -2,6 +2,8 @@
 
 ## 25.2.0 (UNRELEASED)
 
+- Add `aiofiles.shutdown_executor()` to explicitly shut down the aiofiles-managed default thread pool; operations needing it afterwards raise `RuntimeError`. Explicitly passed executors are never managed.
+- File objects are now flushed and fsynced (when writable regular files) on `close()` and on async context manager exit, and cancelling a coroutine while opening a file no longer leaks the file descriptor.
 - _aiofiles_ is now tested on Python 3.15 too.
   ([#240](https://github.com/Tinche/aiofiles/pull/240))
 - Use the configured event loop and executor when exiting the async context managers returned by `aiofiles.open` and the `aiofiles.tempfile` functions.
