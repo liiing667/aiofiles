@@ -2,7 +2,7 @@
 
 from functools import partial
 
-from ..base import AsyncBase
+from ..base import AsyncBase, run_in_executor
 from ..threadpool.utils import (
     cond_delegate_to_executor,
     delegate_to_executor,
@@ -12,7 +12,6 @@ from ..threadpool.utils import (
 
 @delegate_to_executor("fileno", "rollover")
 @cond_delegate_to_executor(
-    "close",
     "flush",
     "isatty",
     "read",
@@ -37,7 +36,9 @@ class AsyncSpooledTemporaryFile(AsyncBase):
         """Implementation to anticipate rollover"""
         if self._file._rolled:
             cb = partial(self._file.write, s)
-            return await self._loop.run_in_executor(self._executor, cb)
+            return await run_in_executor(
+                self._loop, self._executor, cb, on_cancel=self._cancel_cleanup()
+            )
 
         file = self._file._file  # reference underlying base IO object
         rv = file.write(s)
@@ -48,7 +49,9 @@ class AsyncSpooledTemporaryFile(AsyncBase):
         """Implementation to anticipate rollover"""
         if self._file._rolled:
             cb = partial(self._file.writelines, iterable)
-            return await self._loop.run_in_executor(self._executor, cb)
+            return await run_in_executor(
+                self._loop, self._executor, cb, on_cancel=self._cancel_cleanup()
+            )
 
         file = self._file._file  # reference underlying base IO object
         rv = file.writelines(iterable)
@@ -65,6 +68,10 @@ class AsyncTemporaryDirectory:
         self._file = file
         self._loop = loop
         self._executor = executor
+
+    def _cancel_cleanup(self):
+        # A cancelled cleanup still runs to completion in the worker thread.
+        return None
 
     async def close(self):
         await self.cleanup()

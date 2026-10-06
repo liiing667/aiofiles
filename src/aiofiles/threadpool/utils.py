@@ -1,5 +1,7 @@
 import functools
 
+from ..base import run_in_executor
+
 
 def delegate_to_executor(*attrs):
     def cls_builder(cls):
@@ -40,7 +42,9 @@ def cond_delegate_to_executor(*attrs):
 def _make_delegate_method(attr_name):
     async def method(self, *args, **kwargs):
         cb = functools.partial(getattr(self._file, attr_name), *args, **kwargs)
-        return await self._loop.run_in_executor(self._executor, cb)
+        return await run_in_executor(
+            self._loop, self._executor, cb, on_cancel=self._cancel_cleanup()
+        )
 
     return method
 
@@ -65,7 +69,9 @@ def _make_cond_delegate_method(attr_name):
     async def method(self, *args, **kwargs):
         if self._file._rolled:
             cb = functools.partial(getattr(self._file, attr_name), *args, **kwargs)
-            return await self._loop.run_in_executor(self._executor, cb)
+            return await run_in_executor(
+                self._loop, self._executor, cb, on_cancel=self._cancel_cleanup()
+            )
         return getattr(self._file, attr_name)(*args, **kwargs)
 
     return method

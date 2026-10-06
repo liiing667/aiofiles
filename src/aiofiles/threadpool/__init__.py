@@ -12,7 +12,7 @@ from io import (
     TextIOBase,
 )
 
-from ..base import AiofilesContextManager
+from ..base import AiofilesContextManager, close_result_on_cancel, run_in_executor
 from .binary import (
     AsyncBufferedIOBase,
     AsyncBufferedReader,
@@ -90,7 +90,7 @@ async def _open(
         closefd=closefd,
         opener=opener,
     )
-    f = await loop.run_in_executor(executor, cb)
+    f = await run_in_executor(loop, executor, cb, on_cancel=close_result_on_cancel)
 
     return wrap(f, loop=loop, executor=executor)
 
